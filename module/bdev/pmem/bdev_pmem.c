@@ -205,6 +205,7 @@ bdev_pmem_io_get_buf_cb(struct spdk_io_channel *channel, struct spdk_bdev_io *bd
 static void
 bdev_pmem_submit_request(struct spdk_io_channel *channel, struct spdk_bdev_io *bdev_io)
 {
+    printf("bdev_pmem_submit_request: by tid %d\n", bdev_io->tid);
 	switch (bdev_io->type) {
 	case SPDK_BDEV_IO_TYPE_READ:
 		spdk_bdev_io_get_buf(bdev_io, bdev_pmem_io_get_buf_cb,
