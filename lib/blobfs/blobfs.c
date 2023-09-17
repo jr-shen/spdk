@@ -31,6 +31,8 @@
  *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <syscall.h>
+
 #include "spdk/stdinc.h"
 
 #include "spdk/blobfs.h"
@@ -345,6 +347,7 @@ struct spdk_fs_request {
 	struct spdk_fs_cb_args		args;
 	TAILQ_ENTRY(spdk_fs_request)	link;
 	struct spdk_fs_channel		*channel;
+    int tid;
 };
 
 struct spdk_fs_channel {
@@ -405,6 +408,8 @@ alloc_fs_request_with_iov(struct spdk_fs_channel *channel, uint32_t iovcnt)
 		req->args.iovs = &req->args.iov;
 	}
 	req->args.iovcnt = iovcnt;
+
+    req->tid = syscall(SYS_gettid);
 
 	return req;
 }
@@ -1764,6 +1769,7 @@ __read_done(void *ctx, int bserrno)
 		__rw_done(req, 0);
 	} else {
 		_copy_iovs_to_buf(buf, args->op.rw.length, args->iovs, args->iovcnt);
+        args->op.rw.channel->tid = req->tid;
 		spdk_blob_io_write(args->file->blob, args->op.rw.channel,
 				   args->op.rw.pin_buf,
 				   args->op.rw.start_lba, args->op.rw.num_lba,
@@ -1781,6 +1787,7 @@ __do_blob_read(void *ctx, int fserrno)
 		__rw_done(req, fserrno);
 		return;
 	}
+    args->op.rw.channel->tid = req->tid;
 	spdk_blob_io_read(args->file->blob, args->op.rw.channel,
 			  args->op.rw.pin_buf,
 			  args->op.rw.start_lba, args->op.rw.num_lba,
@@ -1875,6 +1882,7 @@ __readvwritev(struct spdk_file *file, struct spdk_io_channel *_channel,
 		spdk_file_truncate_async(file, offset + length, __do_blob_read, req);
 	} else if (!is_read && __is_lba_aligned(file, offset, length)) {
 		_copy_iovs_to_buf(args->op.rw.pin_buf, args->op.rw.length, args->iovs, args->iovcnt);
+        args->op.rw.channel->tid = req->tid;
 		spdk_blob_io_write(args->file->blob, args->op.rw.channel,
 				   args->op.rw.pin_buf,
 				   args->op.rw.start_lba, args->op.rw.num_lba,
@@ -2339,6 +2347,7 @@ __file_flush(void *ctx)
 	BLOBFS_TRACE(file, "offset=0x%jx length=0x%jx page start=0x%jx num=0x%jx\n",
 		     offset, length, start_lba, num_lba);
 	pthread_spin_unlock(&file->lock);
+    file->fs->sync_target.sync_fs_channel->bs_channel->tid = req->tid;
 	spdk_blob_io_write(file->blob, file->fs->sync_target.sync_fs_channel->bs_channel,
 			   next->buf + (start_lba * lba_size) - next->offset,
 			   start_lba, num_lba, __file_flush_done, req);
@@ -2579,6 +2588,7 @@ __readahead(void *ctx)
 
 	BLOBFS_TRACE(file, "offset=%jx length=%jx page start=%jx num=%jx\n",
 		     offset, length, start_lba, num_lba);
+    file->fs->sync_target.sync_fs_channel->bs_channel->tid = req->tid;
 	spdk_blob_io_read(file->blob, file->fs->sync_target.sync_fs_channel->bs_channel,
 			  args->op.readahead.cache_buffer->buf,
 			  start_lba, num_lba, __readahead_done, req);

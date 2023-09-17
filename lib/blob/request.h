@@ -115,6 +115,8 @@ struct spdk_bs_request_set {
 
 	struct spdk_bs_dev_cb_args	cb_args;
 
+    int tid;
+
 	union {
 		struct {
 			spdk_bs_sequence_cpl    cb_fn;

@@ -54,7 +54,9 @@ struct spdk_io_channel {
 	RB_ENTRY(spdk_io_channel)	node;
 	spdk_io_channel_destroy_cb	destroy_cb;
 
-	uint8_t				_padding[40];
+    int last_tid;
+
+	uint8_t				_padding[36];
 	/*
 	 * Modules will allocate extra memory off the end of this structure
 	 *  to store references to hardware-specific references (i.e. NVMe queue

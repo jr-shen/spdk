@@ -41,6 +41,8 @@
 
 #include "spdk/log.h"
 
+#include "spdk/thread_internal.h"
+
 void
 bs_call_cpl(struct spdk_bs_cpl *cpl, int bserrno)
 {
@@ -303,6 +305,7 @@ bs_batch_open(struct spdk_io_channel *_channel,
 	set->cpl = *cpl;
 	set->bserrno = 0;
 	set->channel = channel;
+    set->tid = channel->last_tid;
 
 	set->u.batch.cb_fn = NULL;
 	set->u.batch.cb_arg = NULL;
@@ -327,6 +330,7 @@ bs_batch_read_bs_dev(spdk_bs_batch_t *batch, struct spdk_bs_dev *bs_dev,
 		      lba);
 
 	set->u.batch.outstanding_ops++;
+    spdk_io_channel_from_ctx(channel)->last_tid = set->tid;
 	bs_dev->read(bs_dev, spdk_io_channel_from_ctx(channel), payload, lba, lba_count, &set->cb_args);
 }
 
@@ -341,6 +345,7 @@ bs_batch_read_dev(spdk_bs_batch_t *batch, void *payload,
 		      lba);
 
 	set->u.batch.outstanding_ops++;
+    channel->dev_channel->last_tid = set->tid;
 	channel->dev->read(channel->dev, channel->dev_channel, payload, lba, lba_count, &set->cb_args);
 }
 
@@ -354,6 +359,7 @@ bs_batch_write_dev(spdk_bs_batch_t *batch, void *payload,
 	SPDK_DEBUGLOG(blob_rw, "Writing %" PRIu32 " blocks to LBA %" PRIu64 "\n", lba_count, lba);
 
 	set->u.batch.outstanding_ops++;
+    channel->dev_channel->last_tid = set->tid;
 	channel->dev->write(channel->dev, channel->dev_channel, payload, lba, lba_count,
 			    &set->cb_args);
 }
@@ -369,6 +375,7 @@ bs_batch_unmap_dev(spdk_bs_batch_t *batch,
 		      lba);
 
 	set->u.batch.outstanding_ops++;
+    channel->dev_channel->last_tid = set->tid;
 	channel->dev->unmap(channel->dev, channel->dev_channel, lba, lba_count,
 			    &set->cb_args);
 }
@@ -383,6 +390,7 @@ bs_batch_write_zeroes_dev(spdk_bs_batch_t *batch,
 	SPDK_DEBUGLOG(blob_rw, "Zeroing %" PRIu64 " blocks at LBA %" PRIu64 "\n", lba_count, lba);
 
 	set->u.batch.outstanding_ops++;
+    channel->dev_channel->last_tid = set->tid;
 	channel->dev->write_zeroes(channel->dev, channel->dev_channel, lba, lba_count,
 				   &set->cb_args);
 }
@@ -447,6 +455,8 @@ bs_user_op_alloc(struct spdk_io_channel *_channel, struct spdk_bs_cpl *cpl,
 	args->offset = offset;
 	args->length = length;
 	args->payload = payload;
+
+    set->tid = _channel->last_tid;
 
 	return (spdk_bs_user_op_t *)set;
 }
