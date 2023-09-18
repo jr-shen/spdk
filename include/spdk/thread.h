@@ -840,6 +840,8 @@ int spdk_interrupt_mode_enable(void);
  */
 bool spdk_interrupt_mode_is_enabled(void);
 
+int *spdk_thread_get_io_channel_last_tid(struct spdk_io_channel *ch);
+
 #ifdef __cplusplus
 }
 #endif

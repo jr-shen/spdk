@@ -1769,7 +1769,7 @@ __read_done(void *ctx, int bserrno)
 		__rw_done(req, 0);
 	} else {
 		_copy_iovs_to_buf(buf, args->op.rw.length, args->iovs, args->iovcnt);
-        args->op.rw.channel->tid = req->tid;
+        *spdk_thread_get_io_channel_last_tid(args->op.rw.channel) = req->tid;
 		spdk_blob_io_write(args->file->blob, args->op.rw.channel,
 				   args->op.rw.pin_buf,
 				   args->op.rw.start_lba, args->op.rw.num_lba,
@@ -1787,7 +1787,7 @@ __do_blob_read(void *ctx, int fserrno)
 		__rw_done(req, fserrno);
 		return;
 	}
-    args->op.rw.channel->tid = req->tid;
+    *spdk_thread_get_io_channel_last_tid(args->op.rw.channel) = req->tid;
 	spdk_blob_io_read(args->file->blob, args->op.rw.channel,
 			  args->op.rw.pin_buf,
 			  args->op.rw.start_lba, args->op.rw.num_lba,
@@ -1882,7 +1882,7 @@ __readvwritev(struct spdk_file *file, struct spdk_io_channel *_channel,
 		spdk_file_truncate_async(file, offset + length, __do_blob_read, req);
 	} else if (!is_read && __is_lba_aligned(file, offset, length)) {
 		_copy_iovs_to_buf(args->op.rw.pin_buf, args->op.rw.length, args->iovs, args->iovcnt);
-        args->op.rw.channel->tid = req->tid;
+        *spdk_thread_get_io_channel_last_tid(args->op.rw.channel) = req->tid;
 		spdk_blob_io_write(args->file->blob, args->op.rw.channel,
 				   args->op.rw.pin_buf,
 				   args->op.rw.start_lba, args->op.rw.num_lba,
@@ -2347,7 +2347,7 @@ __file_flush(void *ctx)
 	BLOBFS_TRACE(file, "offset=0x%jx length=0x%jx page start=0x%jx num=0x%jx\n",
 		     offset, length, start_lba, num_lba);
 	pthread_spin_unlock(&file->lock);
-    file->fs->sync_target.sync_fs_channel->bs_channel->tid = req->tid;
+    *spdk_thread_get_io_channel_last_tid(file->fs->sync_target.sync_fs_channel->bs_channel) = req->tid;
 	spdk_blob_io_write(file->blob, file->fs->sync_target.sync_fs_channel->bs_channel,
 			   next->buf + (start_lba * lba_size) - next->offset,
 			   start_lba, num_lba, __file_flush_done, req);
@@ -2588,7 +2588,7 @@ __readahead(void *ctx)
 
 	BLOBFS_TRACE(file, "offset=%jx length=%jx page start=%jx num=%jx\n",
 		     offset, length, start_lba, num_lba);
-    file->fs->sync_target.sync_fs_channel->bs_channel->tid = req->tid;
+    *spdk_thread_get_io_channel_last_tid(file->fs->sync_target.sync_fs_channel->bs_channel) = req->tid;
 	spdk_blob_io_read(file->blob, file->fs->sync_target.sync_fs_channel->bs_channel,
 			  args->op.readahead.cache_buffer->buf,
 			  start_lba, num_lba, __readahead_done, req);

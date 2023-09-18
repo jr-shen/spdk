@@ -2672,4 +2672,8 @@ spdk_interrupt_mode_is_enabled(void)
 	return g_interrupt_mode;
 }
 
+int *spdk_thread_get_io_channel_last_tid(struct spdk_io_channel *ch) {
+    return &ch->last_tid;
+}
+
 SPDK_LOG_REGISTER_COMPONENT(thread)

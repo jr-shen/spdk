@@ -53,7 +53,6 @@
 
 #include "bdev_internal.h"
 #include "spdk_internal/trace_defs.h"
-#include "thread_internal.h"
 
 #ifdef SPDK_CONFIG_VTUNE
 #include "ittnotify.h"
@@ -3819,7 +3818,7 @@ bdev_read_blocks_with_md(struct spdk_bdev_desc *desc, struct spdk_io_channel *ch
 	bdev_io->u.bdev.md_buf = md_buf;
 	bdev_io->u.bdev.num_blocks = num_blocks;
 	bdev_io->u.bdev.offset_blocks = offset_blocks;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	bdev_io_submit(bdev_io);
 	return 0;
@@ -3912,7 +3911,7 @@ bdev_readv_blocks_with_md(struct spdk_bdev_desc *desc, struct spdk_io_channel *c
 	bdev_io->u.bdev.md_buf = md_buf;
 	bdev_io->u.bdev.num_blocks = num_blocks;
 	bdev_io->u.bdev.offset_blocks = offset_blocks;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 	bdev_io->internal.ext_opts = opts;
 
 	bdev_io_submit(bdev_io);
@@ -4003,7 +4002,7 @@ bdev_write_blocks_with_md(struct spdk_bdev_desc *desc, struct spdk_io_channel *c
 	bdev_io->u.bdev.md_buf = md_buf;
 	bdev_io->u.bdev.num_blocks = num_blocks;
 	bdev_io->u.bdev.offset_blocks = offset_blocks;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	bdev_io_submit(bdev_io);
 	return 0;
@@ -4086,7 +4085,7 @@ bdev_writev_blocks_with_md(struct spdk_bdev_desc *desc, struct spdk_io_channel *
 	bdev_io->u.bdev.md_buf = md_buf;
 	bdev_io->u.bdev.num_blocks = num_blocks;
 	bdev_io->u.bdev.offset_blocks = offset_blocks;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 	bdev_io->internal.ext_opts = opts;
 
 	bdev_io_submit(bdev_io);
@@ -4243,7 +4242,7 @@ bdev_comparev_blocks_with_md(struct spdk_bdev_desc *desc, struct spdk_io_channel
 	bdev_io->u.bdev.md_buf = md_buf;
 	bdev_io->u.bdev.num_blocks = num_blocks;
 	bdev_io->u.bdev.offset_blocks = offset_blocks;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	if (bdev_io_type_supported(bdev, SPDK_BDEV_IO_TYPE_COMPARE)) {
 		bdev_io_submit(bdev_io);
@@ -4311,7 +4310,7 @@ bdev_compare_blocks_with_md(struct spdk_bdev_desc *desc, struct spdk_io_channel 
 	bdev_io->u.bdev.md_buf = md_buf;
 	bdev_io->u.bdev.num_blocks = num_blocks;
 	bdev_io->u.bdev.offset_blocks = offset_blocks;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	if (bdev_io_type_supported(bdev, SPDK_BDEV_IO_TYPE_COMPARE)) {
 		bdev_io_submit(bdev_io);
@@ -4496,7 +4495,7 @@ spdk_bdev_comparev_and_writev_blocks(struct spdk_bdev_desc *desc, struct spdk_io
 	bdev_io->u.bdev.md_buf = NULL;
 	bdev_io->u.bdev.num_blocks = num_blocks;
 	bdev_io->u.bdev.offset_blocks = offset_blocks;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	if (bdev_io_type_supported(bdev, SPDK_BDEV_IO_TYPE_COMPARE_AND_WRITE)) {
 		bdev_io_submit(bdev_io);
@@ -4546,7 +4545,7 @@ spdk_bdev_zcopy_start(struct spdk_bdev_desc *desc, struct spdk_io_channel *ch,
 	bdev_io->u.bdev.zcopy.populate = populate ? 1 : 0;
 	bdev_io->u.bdev.zcopy.commit = 0;
 	bdev_io->u.bdev.zcopy.start = 1;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	bdev_io_submit(bdev_io);
 
@@ -4620,7 +4619,7 @@ spdk_bdev_write_zeroes_blocks(struct spdk_bdev_desc *desc, struct spdk_io_channe
 	bdev_io->internal.desc = desc;
 	bdev_io->u.bdev.offset_blocks = offset_blocks;
 	bdev_io->u.bdev.num_blocks = num_blocks;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	if (bdev_io_type_supported(bdev, SPDK_BDEV_IO_TYPE_WRITE_ZEROES)) {
 		bdev_io_submit(bdev_io);
@@ -4689,7 +4688,7 @@ spdk_bdev_unmap_blocks(struct spdk_bdev_desc *desc, struct spdk_io_channel *ch,
 
 	bdev_io->u.bdev.offset_blocks = offset_blocks;
 	bdev_io->u.bdev.num_blocks = num_blocks;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	bdev_io_submit(bdev_io);
 	return 0;
@@ -4739,7 +4738,7 @@ spdk_bdev_flush_blocks(struct spdk_bdev_desc *desc, struct spdk_io_channel *ch,
 	bdev_io->u.bdev.iovcnt = 0;
 	bdev_io->u.bdev.offset_blocks = offset_blocks;
 	bdev_io->u.bdev.num_blocks = num_blocks;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	bdev_io_submit(bdev_io);
 	return 0;
@@ -4844,7 +4843,7 @@ spdk_bdev_reset(struct spdk_bdev_desc *desc, struct spdk_io_channel *ch,
 	bdev_io->internal.submit_tsc = spdk_get_ticks();
 	bdev_io->type = SPDK_BDEV_IO_TYPE_RESET;
 	bdev_io->u.reset.ch_ref = NULL;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	pthread_mutex_lock(&bdev->internal.mutex);
 	TAILQ_INSERT_TAIL(&channel->queued_resets, bdev_io, internal.link);
@@ -4953,7 +4952,7 @@ spdk_bdev_nvme_admin_passthru(struct spdk_bdev_desc *desc, struct spdk_io_channe
 	bdev_io->u.nvme_passthru.md_buf = NULL;
 	bdev_io->u.nvme_passthru.md_len = 0;
 
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	bdev_io_submit(bdev_io);
 	return 0;
@@ -4995,7 +4994,7 @@ spdk_bdev_nvme_io_passthru(struct spdk_bdev_desc *desc, struct spdk_io_channel *
 	bdev_io->u.nvme_passthru.md_buf = NULL;
 	bdev_io->u.nvme_passthru.md_len = 0;
 
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	bdev_io_submit(bdev_io);
 	return 0;
@@ -5037,7 +5036,7 @@ spdk_bdev_nvme_io_passthru_md(struct spdk_bdev_desc *desc, struct spdk_io_channe
 	bdev_io->u.nvme_passthru.md_buf = md_buf;
 	bdev_io->u.nvme_passthru.md_len = md_len;
 
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	bdev_io_submit(bdev_io);
 	return 0;
@@ -5249,7 +5248,7 @@ spdk_bdev_abort(struct spdk_bdev_desc *desc, struct spdk_io_channel *ch,
 	bdev_io->internal.desc = desc;
 	bdev_io->internal.submit_tsc = spdk_get_ticks();
 	bdev_io->type = SPDK_BDEV_IO_TYPE_ABORT;
-	bdev_io_init(bdev_io, bdev, cb_arg, cb, ch->last_tid);
+	bdev_io_init(bdev_io, bdev, cb_arg, cb, *spdk_thread_get_io_channel_last_tid(ch));
 
 	bdev_io->u.bdev.abort.bio_cb_arg = bio_cb_arg;
 
